@@ -70,7 +70,6 @@ class UserInterface(object):
         self.blink_counter = 0
         self.prev_blink = False
         self.blink = False
-        self.time_pressed_pitch = self.now
         self.ignore_next_pitch_click = False
         self.ignore_next_speed_click = False
         self.clearAllLEDs()
@@ -469,7 +468,7 @@ class UserInterface(object):
             if speed_neg_bright < 0:
                 speed_neg_bright = 0
             if self.currentInstr == "a_granularlooper":
-                if self.controlhandler.channeldict["record"].curVal == 1:
+                if self.controlhandler.channeldict["record"].curVal == 1 and self.controlhandler.getAltValue("record_alt") == 0:
                     color_neg = red
                     color_pos = red
                     speed_neg_bright = 1.0
@@ -699,7 +698,10 @@ class UserInterface(object):
             self.set_rgb("pitch_neg", neg_color.red(), neg_color.green(),neg_color.blue(), pitch_neg_bright)
             self.set_rgb("pitch_pos", pos_color.red(), pos_color.green(),pos_color.blue(), pitch_pos_bright)
         elif mode == "secondary controls":
-            tempc = purple
+            if self.controlhandler.getAltValue("altpitchtype") == 0:
+                tempc = purple
+            else:
+                tempc = green
             amt = round(self.controlhandler.getAltValue("pitch_alt"), 3)
 
             pos_bright = (amt - 0.5) * 2.0
@@ -743,10 +745,16 @@ class UserInterface(object):
                 self.time_pressed_pitch = self.now
             self.set_pitch_amount()
         elif mode == "secondary controls":
-            self.set_alt_pitch_amount()
             if self.pitch_click.risingEdge() == True:
+                self.time_pressed_pitch = self.now
+            if self.pitch_click.state() == True and self.now - self.time_pressed_pitch > 1000 and not self.ignore_next_pitch_click:
+                self.ignore_next_pitch_click = True
+                # change the mode between amount of pitch deviation and chance of pitch deviation by octave(s)
+                self.controlhandler.setAltValue("altpitchtype", 1 - self.controlhandler.getAltValue("altpitchtype"))
+            if self.clicked_pitch() == 1: # falling edge
                 self.restoreDefaultsFlag = True
                 self.controlhandler.restoreAltToDefault()
+            self.set_alt_pitch_amount()
         elif mode == "instr selector":
             if self.controlhandler.getInstrSelBank() == "factory":
                 f_handle = self.factoryinstr_fhandle 

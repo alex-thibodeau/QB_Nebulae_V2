@@ -42,6 +42,7 @@ nebconfigend
 ; gksourcegate - separate state for the source gate input. used to repurpose separately from source control.
 ; gkeol - end of sample 1 or 0 essentially high while the sample is resetting to 0.
 ; gkbufferlength - size of buffer 
+; gkaltpitchtype - 1 is octaves, 0 is deviation amount
 
 ;;;;;;;;;;;;;;;;;
 ;;;; UDOs ;;;;;;;
@@ -255,6 +256,8 @@ loop:
     itempidx += 1
     if (itempidx < 100) igoto loop
 gkfilesel_offset = 399
+
+seed 0
 
 kfirsttime init 1
 
@@ -500,8 +503,10 @@ endif
 
 ; Random Pitch
 ;krandpitchamt = gkloopstart_alt
-krandpitchamt = gkpitch_alt
-krndpitchmod rand (krandpitchamt * 1200)
+if gkaltpitchtype == 0 then
+	krandpitchamt = gkpitch_alt
+	krndpitchmod rand (krandpitchamt * 1200)
+endif
 
 ; Set a lot of parameters for Partikkel
 kdistribution	= gkdensity_alt * gkdensity_alt * 100; periodic grain distribution
@@ -648,7 +653,7 @@ else
                 if kspeed == 0 then
                     krecend = giMaxRecordBuffer
                 else
-                    krecend = (kloopsize + kloopstart) / abs(kspeed)
+                    krecend = (kloopstart + kloopsize) / abs(kspeed)
                 endif
             else
                 krecend = giMaxRecordBuffer
@@ -688,6 +693,8 @@ endif
 ;arecR = aprevmixr
 arecL = amixl
 arecR = amixr
+;arecL = aoutl
+;arecR = aoutr
 kfin, kbuffsize, koverlapFlagA CplxBufRec2 arecL, arecR, ainl * ablenddry, ainr * ablenddry, giftLA, giftRA, giftLB, giftRB, krecordB, krecstart, krecend, krecwrap, gkrecord_alt, kActiveBuffer
 kfinchanged trigger kfin, 0.5, 0 ; Done Recording
 kfinstarted trigger kfin, 0.5, 1 ; Started Recording
@@ -770,7 +777,19 @@ else
 endif
 
 if gksource == 1 then
-    kwavfreq	= ((1/kglen)*kpitch) * cent(krndpitchmod); fundamental frequency of source waveform
+	if gkaltpitchtype == 0 then
+		kwavfreq	= ((1/kglen)*kpitch) * cent(krndpitchmod); fundamental frequency of source waveform
+	else
+		kprob random 0, 1
+		if (kprob > 1 - gkpitch_alt)  && (kprob * kprob * kprob) > 1 - gkpitch_alt then
+			kwavfreq = ((1/kglen) * kpitch) * cent(2400)
+		elseif kprob > 1 - gkpitch_alt then
+			kwavfreq = ((1/kglen) * kpitch) * cent(1200)
+		else 
+			kwavfreq = ((1/kglen) * kpitch) * cent(0)
+		endif
+	endif
+		
     awavfm = 0
     asigL mincer atime, 1.0, kpitch, giftLB, kphaselock, ifftlivesize, idecimlive
     asigR mincer atime, 1.0, kpitch, giftRB, kphaselock, ifftlivesize, idecimlive
@@ -800,7 +819,19 @@ if gksource == 1 then
         asigR = 0
     endif
 else
-    kwavfreq    = ((1/klen)*kpitch) * cent(krndpitchmod);
+	if gkaltpitchtype == 0 then
+		kwavfreq	= ((1/klen)*kpitch) * cent(krndpitchmod); fundamental frequency of source waveform
+	else
+		kprob random 0, 1
+		if (kprob > 1 - gkpitch_alt)  && (kprob * kprob * kprob) > 1 - gkpitch_alt then
+			kwavfreq = ((1/klen) * kpitch) * cent(2400)
+		elseif kprob > 1 - gkpitch_alt then
+			kwavfreq = ((1/klen) * kpitch) * cent(1200)
+		else 
+			kwavfreq = ((1/klen) * kpitch) * cent(0) ; maybe this is just 1 idk
+		endif
+	endif
+
     knumchn = gichn[gkfilesel]
     kwaveformL = gkfilesel_offset + gkfilesel + 1
     asigL mincer atime, 0.8, kpitch * (kfilesr / sr), kwaveformL, kphaselock, ifftfilesize, idecim
@@ -812,13 +843,8 @@ else
         kwaveformR = kwaveformL
         asigR = asigL
     endif 
-		if gkblend_alt < 0.01 then
-			awavfml = 0
-			awavfmr = 0
-		else
-			awavfml = gkblend_alt * ainl
-			awavfmr = gkblend_alt * ainr
-		endif
+		awavfml = 0
+		awavfmr = 0
     agrainLL, agrainLR partikkel kgrainfreq, kdistribution, idisttab, async, kenv2amt, ienv2tab, \
             ienv_attack, ienv_decay, ksustain_amount, ka_d_ratio, kgrainsizel, iamp, igainmasks, \
             kwavfreq, ksweepshape, iwavfreqstarttab, iwavfreqendtab, awavfml, \
@@ -883,35 +909,51 @@ endif
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;kblend portk gkblend, 0.01; reduced a bit
 kblend = gkblend
+kblend_alt = gkblend_alt
 if kblend > 1.0 then
     kblend = 1.0
 endif
 if kblend < 0.0 then 
     kblend = 0.0
 endif
-if gksource == 1 then
-    if kblend > 0.48 && kblend < 0.52 then
-        kblend = 0.5
-    endif
+if kblend_alt > 1.0 then
+    kblend_alt = 1.0
+endif
+if kblend_alt < 0.0 then 
+    kblend_alt = 0.0
 endif
 ablend interp kblend
+ablend_alt interp kblend_alt
+
 if gksource == 1 then
-    ablenddryfactor = abs((ablend * 4.0) - 2.0) - 1.0
-    ablenddryfactor min ablenddryfactor, a(1.0)
-    ablenddryfactor max ablenddryfactor, a(-1.0)
-    ablendvocfactor min ((ablend * 4.0) - 1.0), a(1.0)
-    ablendgrainfactor max ((ablend * 4.0) - 3.0), a(-1.0)
-    ablendvocoder = sqrt(0.5 * (1 - ablendvocfactor))
-    ablendgranular = sqrt(0.5 * (1 + ablendgrainfactor))
-    ablenddry = sqrt(0.5 * (1 - ablenddryfactor))
+	ablend *= 2.0
+	ablend -= 1.0
+	ablend_alt *= 2.0
+	ablend_alt -= 1.0
+	ablend max ablend, a(-1.0)
+	ablend min ablend, a(1.0)
+	ablend_alt max ablend_alt, a(-1.0)
+	ablend_alt min ablend_alt, a(1.0)
+
+    ablendvocoder = sqrt(0.5 * (1 - ablend))
+    ablendgranular = sqrt(0.5 * (1 + ablend))
+    ablenddry = sqrt(0.5 * (1 + ablend_alt))
+	ablendwet = sqrt(0.5 * (1 - ablend_alt))
+
     ablendvocoder min ablendvocoder, a(1.0)
     ablendgranular min ablendgranular, a(1.0)
+    ablenddry min ablenddry, a(1.0)
+    ablendwet min ablendwet, a(1.0)
     ablendvocoder max ablendvocoder, a(0.0)
     ablendgranular max ablendgranular, a(0.0)
+    ablenddry max ablenddry, a(0.0)
+    ablendwet max ablendwet, a(0.0)
+
     amixl = (asigL * ablendvocoder) + (agrainCompL * ablendgranular)
     amixr = (asigR * ablendvocoder) + (agrainCompR * ablendgranular)
-    aoutl = amixl + (ainl * ablenddry)
-    aoutr = amixr + (ainr * ablenddry)
+	aoutl = (ablendwet * amixl) + (ablenddry * ainl)
+	aoutr = (ablendwet * amixr) + (ablenddry * ainr)
+
 else
     kampscalar = 1.0 / kpeakamp
     aprevmixl = amixl

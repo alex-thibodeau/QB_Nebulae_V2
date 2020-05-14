@@ -90,7 +90,8 @@ class ControlHandler(object):
             control.ControlChannel(self.csound, "file", self.settings.load("file"), "digital", data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=NEXT_GATE_PIN,button_pin=libSR.PIN_NEXT,config=digitalConfig.get("file"),maximum=self.numFiles),
             control.ControlChannel(self.csound, "source", self.settings.load("source"), "digital",data_channel=BUTTON_GATE_SR, sr=self.shiftReg, gate_pin=libSR.PIN_SOURCE_GATE,button_pin=libSR.PIN_SOURCE, config=digitalConfig.get("source")),
             control.ControlChannel(self.csound, "filestate", 0, "digital",data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=NEXT_GATE_PIN,button_pin=libSR.PIN_NEXT, config=digitalConfig.get("filestate")) ,
-            control.ControlChannel(self.csound, "sourcegate", 0, "digital",data_channel=BUTTON_GATE_SR, sr=self.shiftReg, gate_pin=libSR.PIN_SOURCE_GATE,button_pin=libSR.PIN_SOURCE, config=digitalConfig.get("sourcegate")) ] 
+            control.ControlChannel(self.csound, "sourcegate", 0, "digital",data_channel=BUTTON_GATE_SR, sr=self.shiftReg, gate_pin=libSR.PIN_SOURCE_GATE,button_pin=libSR.PIN_SOURCE, config=digitalConfig.get("sourcegate"))
+            ] 
         self.altchannels = [
             control.ControlChannel(self.csound, "speed_alt", self.settings.load("speed_alt"), "hybrid", -1, maximum=32),
             control.ControlChannel(self.csound, "pitch_alt", self.settings.load("pitch_alt"), "hybrid", -1),
@@ -104,7 +105,8 @@ class ControlHandler(object):
             control.ControlChannel(self.csound, "freeze_alt", self.settings.load("freeze_alt"), "digital",data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=FREEZE_GATE_PIN,button_pin=libSR.PIN_FREEZE, config=digitalConfig.get("freeze_alt")),
             control.ControlChannel(self.csound, "source_alt", self.settings.load("source_alt"), "digital",data_channel=BUTTON_GATE_SR, sr=self.shiftReg, gate_pin=libSR.PIN_SOURCE_GATE,button_pin=libSR.PIN_SOURCE, config=digitalConfig.get("source_alt")),
             control.ControlChannel(self.csound, "record_alt", self.settings.load("record_alt"), "digital",data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=RECORD_GATE_PIN,button_pin=libSR.PIN_RECORD, config=digitalConfig.get("record_alt")), 
-            control.ControlChannel(self.csound, "file_alt", self.settings.load("file_alt"), "digital", data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=NEXT_GATE_PIN,button_pin=libSR.PIN_NEXT,config=digitalConfig.get("file_alt"), maximum=3)
+            control.ControlChannel(self.csound, "file_alt", self.settings.load("file_alt"), "digital", data_channel=BUTTON_SR_GATE_GPIO, sr=self.shiftReg, gate_pin=NEXT_GATE_PIN,button_pin=libSR.PIN_NEXT,config=digitalConfig.get("file_alt"), maximum=3),
+            control.ControlChannel(self.csound, "altpitchtype", 0, "static")
             ]
 
         self.instr_sel_controls = [
@@ -217,7 +219,7 @@ class ControlHandler(object):
 
     def mode(self):
         return self.control_mode
-    
+
     def enterNormalMode(self):
         print "entering normal"
         for chn in self.channels:

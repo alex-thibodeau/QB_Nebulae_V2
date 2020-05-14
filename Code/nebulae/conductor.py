@@ -50,6 +50,7 @@ gkreset_alt chnexport "reset_alt", 1
 gksource_alt chnexport "source_alt", 1
 gkpitch_alt chnexport "pitch_alt", 1
 gkblend_alt chnexport "blend_alt", 1
+gkaltpitchtype chnexport "altpitchtype", 1
 ; data buffers -- 100 Files maximum
 gilen[] init 100
 gichn[] init 100
