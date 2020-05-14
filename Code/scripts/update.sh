@@ -48,8 +48,57 @@ then
         sudo bash -c "cat /home/alarm/QB_Nebulae_V2/Code/localfiles/nebulae.service > /etc/systemd/system/nebulae.service"
     fi
     sudo reboot
+elif [ -d /home/alarm/QB_Nebulae_V2/Code/packages ]
+then
+    echo "detected firmware pacakges to install" 
+    sudo pkill -1 -f /home/alarm/QB_Nebulae_V2/Code/nebulae/bootleds.py
+    python2 /home/alarm/QB_Nebulae_V2/Code/nebulae/bootleds.py updating &
+
+    echo "install web services"
+    sudo cp /home/alarm/QB_Nebulae_V2/Code/web/NebFile/NebFile.service /etc/systemd/system
+    sudo systemctl --system daemon-reload 
+
+    cd /home/alarm/QB_Nebulae_V2/Code/packages
+
+    sudo pacman --noconfirm -U *.tar.xz
+    echo "installed packages"
+
+    echo "install pip2"
+    cd python
+    sudo python2 pip-20.0.2-py2.py3-none-any.whl/pip install --no-index pip-20.0.2-py2.py3-none-any.whl 
+
+    echo "installed pip packages"
+    sudo pip2 install *
+    cd /home/alarm
+
+    rm -rf /home/alarm/QB_Nebulae_V2/Code/packages
+
+    echo "Supercollider config"
+    if [ -f /home/alarm/QB_Nebulae_V2/Code/localfiles/jackdrc ]
+    then
+        echo "updating /etc/jackdrc"
+        sudo bash -c "cat /home/alarm/QB_Nebulae_V2/Code/localfiles/jackdrc > /etc/jackdrc"
+    fi
+    if [ -f /home/alarm/QB_Nebulae_V2/Code/localfiles/startup.scd ]
+    then
+        echo "updating startup.scd"
+        sudo bash -c "cat /home/alarm/QB_Nebulae_V2/Code/localfiles/startup.scd > /root/.config/SuperCollider/startup.scd"
+    fi
+
+    #mkdir dir if they dont exist
+    mkdir -p /home/alarm/sc
+
+    sudo reboot
 else
-    echo "No Update Detected"
+    FC=`ls -l /mnt/memory/*.tar.xz | wc -l` 
+    if [ $FC -gt 0 ] 
+    then 
+        echo "Packages detected"
+	sudo pacman --noconfirm -U /mnt/memory/*.tar.xz
+        rm /mnt/memory/*.tar.xz
+    else  
+      echo "No Update Detected"
+    fi
 fi
 sudo umount /dev/sda1
 sh /home/alarm/QB_Nebulae_V2/Code/scripts/mountfs.sh ro

@@ -1,0 +1,1 @@
+/usr/bin/jackd -R -P75 -dalsa -dhw:0 -p512 -n3 -s -r48000

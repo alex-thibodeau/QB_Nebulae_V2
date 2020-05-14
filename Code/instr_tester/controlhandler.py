@@ -59,10 +59,10 @@ class ControlHandler(object):
                         control.ControlChannel(self.csound, "pitch", 0.5, "static"),
                         control.ControlChannel(self.csound, "start", 0.0, "static"),
                         control.ControlChannel(self.csound, "size", 1.0, "static"),
-                        control.ControlChannel(self.csound, "mix", 0.0,"static"),
+                        control.ControlChannel(self.csound, "blend", 0.0,"static"),
                         control.ControlChannel(self.csound, "density", 0.001, "static"),
                         control.ControlChannel(self.csound, "overlap", 0.0012, "static"),
-                        control.ControlChannel(self.csound, "degrade", 1.0, "static"),
+                        control.ControlChannel(self.csound, "window", 1.0, "static"),
                         control.ControlChannel(self.csound, "file", 0, "static"),
                         control.ControlChannel(self.csound, "reset", 0, "static"),
                         control.ControlChannel(self.csound, "freeze", 0, "static"),
@@ -74,10 +74,10 @@ class ControlHandler(object):
                         control.ControlChannel(self.csound, "pitch_alt", 0.5, "static"),
                         control.ControlChannel(self.csound, "start_alt", 0.0, "static"),
                         control.ControlChannel(self.csound, "size_alt", 1.0, "static"),
-                        control.ControlChannel(self.csound, "mix_alt", 0.0,"static"),
+                        control.ControlChannel(self.csound, "blend_alt", 0.0,"static"),
                         control.ControlChannel(self.csound, "density_alt", 0.000, "static"),
                         control.ControlChannel(self.csound, "overlap_alt", 0.0012, "static"),
-                        control.ControlChannel(self.csound, "degrade_alt", 0.5, "static"),
+                        control.ControlChannel(self.csound, "window_alt", 0.5, "static"),
                         control.ControlChannel(self.csound, "file_alt", 0, "static"),
                         control.ControlChannel(self.csound, "reset_alt", 0, "static"),
                         control.ControlChannel(self.csound, "freeze_alt", 0, "static"),
@@ -206,10 +206,10 @@ class ControlHandler(object):
         self.altchanneldict["pitch_alt"].setValue(0.0)
         self.altchanneldict["start_alt"].setValue(0.0)
         self.altchanneldict["size_alt"].setValue(0.0)
-        self.altchanneldict["mix_alt"].setValue(0.0)
+        self.altchanneldict["blend_alt"].setValue(0.0)
         self.altchanneldict["density_alt"].setValue(0.0)
         self.altchanneldict["overlap_alt"].setValue(0.0)
-        self.altchanneldict["degrade_alt"].setValue(0.5)
+        self.altchanneldict["window_alt"].setValue(0.5)
         self.altchanneldict["reset_alt"].setValue(0.0)
         self.altchanneldict["freeze_alt"].setValue(0.0)
         self.altchanneldict["source_alt"].setValue(0.0)

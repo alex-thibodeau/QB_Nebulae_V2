@@ -1,0 +1,5 @@
+[filterCoeff]
+analog = 0.33
+hybrid = 0.43
+pitch = 0.33
+start = 0.43

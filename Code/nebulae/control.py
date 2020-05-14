@@ -8,6 +8,9 @@ import random
 import os
 import digitaldata
 import time
+import nconfig
+
+
 # Hardware SPI configuration:
 SPI_PORT   = 0
 SPI_DEVICE_CV = 0
@@ -24,6 +27,16 @@ BUTTON_GATE_SR = 2
 BUTTON_GPIO_GATE_SR = 3
 BUTTON_GPIO_GATE_NONE = 4
 BUTTON_SR_GATE_NONE = 5
+
+
+config = nconfig.NConfig()
+defSmoothCoeff = float(config.getValue("filterCoeff","analog",0.33))
+defHybridCoeff = float(config.getValue("filterCoeff","hybrid",0.43))
+
+# litte filtering on v/oct we dont want it gliding
+defPitchCoeff = float(config.getValue("filterCoeff","pitch",0.95))
+# reduced filtering on start, so that it can quickly and accurately be changed
+defStartCoeff = float(config.getValue("filterCoeff","start",0.95))
 
 def addHysteresis(cur, new, distance):
     output = cur    
@@ -45,7 +58,8 @@ def averageInput(new_val, hist, hist_size, hist_idx):
 
 # Class for handling ADC Input Data
 class AdcData(object):
-    def __init__(self, pot_channel, cv_channel, minimum, maximum, init_val=0.0):
+    def __init__(self, pot_channel, cv_channel, name,minimum, maximum, init_val=0.0):
+        self.name = name
         self.minimum = minimum
         self.maximum = maximum
         self.range = maximum - minimum
@@ -71,7 +85,8 @@ class AdcData(object):
         self.filtPotVal = 0
         self.filtCVVal = 0
         #self.smoothCoeff = 0.125
-        self.smoothCoeff = 0.33
+        ##self.smoothCoeff = 0.33
+        self.smoothCoeff = defSmoothCoeff
         self.hyst_amt = 0.002
         self.stablized = True
         self.stable_delta = 0.0
@@ -80,6 +95,8 @@ class AdcData(object):
             self.mcp_pot = MCP3208.MCP3208(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE_POT))
         if (cv_channel >= 0):
             self.mcp_cv = MCP3208.MCP3208(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE_CV))
+        if self.name == "start":
+            self.smoothCoeff = defStartCoeff
 
     def setIgnoreHID(self, state):
         self.ignoring_pot = state
@@ -221,6 +238,9 @@ class StaticData(object):
     def setValue(self, value):
         self.curVal = value
 
+
+
+
 class HybridData(object):
     def __init__(self, channel, name, minimum, maximum, init_val):
         self.init  = init_val
@@ -241,13 +261,14 @@ class HybridData(object):
             self.scaling = 0.8685 # Rev13
             ## TODO recalibrate for rev10
             #self.filtCoeff = 0.20
-            self.filtCoeff = 0.33
+            ##self.filtCoeff = 0.33
+            self.filtCoeff = defPitchCoeff
         else:
             self.minimum = minimum
             self.maximum = maximum
             self.scaling = 1.0
             self.offset = -0.0049
-            self.filtCoeff = 0.43
+            self.filtCoeff = defHybridCoeff
         self.range = self.maximum - self.minimum
         self.channel = channel
         if (channel >= 0):
@@ -440,7 +461,7 @@ class ControlChannel(object):
         if (cvchn is -2):
             cvchn = data_channel
         if (self.source is "analog"):
-            self.input = AdcData(data_channel, cvchn, minimum, maximum, init_val=init)
+            self.input = AdcData(data_channel,cvchn, self.name, minimum, maximum, init_val=init)
         elif (source is "static"):
             self.input = StaticData(self.curVal)
         elif (source is "digital"):

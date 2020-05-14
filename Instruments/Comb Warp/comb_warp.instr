@@ -1,3 +1,9 @@
+nebconfigbegin
+sr,48000
+ksmps,64
+-B,512
+-b,64
+nebconfigend
 /*
 
 ~ Nebulae_CombWarp.csd ~

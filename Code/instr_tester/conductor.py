@@ -14,46 +14,62 @@ class Conductor(object):
         self.dir = "audio/"
         self.filehandler = fh.FileHandler(self.dir,[".wav",".aif", ".aiff"])
 
+    def set_home_dir(self, dir):
+        print "home dir:" + dir
+        self.instr_dir=dir+"/instr/"
+        self.dir = dir+"/audio/"
+        self.filehandler = fh.FileHandler(self.dir,[".wav",".aif", ".aiff"])
+
     def generate_orc(self, instr):
         self.instr = instr
+        print "generate_orc : " + self.instr_dir + self.instr
         self.orcheader = """
-            ; File-Looping Orc
-            nchnls=2
-            0dbfs=1
-            ; primary controls
-            gkpitch chnexport "pitch", 1
-            gkspeed chnexport "speed", 1
-            gkloopstart chnexport "start", 1
-            gkloopsize chnexport "size", 1
-            gkdensity chnexport "density", 1
-            gkoverlap chnexport "overlap", 1
-            gkdegrade chnexport "degrade", 1
-            gkfilesel chnexport "file", 1
-            gkfreeze chnexport "freeze", 1
-            gkreset chnexport "reset", 1
-            gkmix chnexport "mix", 1
-            gkrecord chnexport "record", 1
-            gkrecordstate chnexport "recordstate", 1
-            gksource chnexport "source", 1
-            gkeol chnexport "eol", 2
-            gksizestatus chnexport "sizestatus", 2
-            ; secondary controls
-            gkloopstart_alt chnexport "start_alt", 1
-            gkloopsize_alt chnexport "size_alt", 1
-            gkdensity_alt chnexport "density_alt", 1
-            gkoverlap_alt chnexport "overlap_alt", 1
-            gkdegrade_alt chnexport "degrade_alt", 1
-            gkfreeze_alt chnexport "freeze_alt", 1
-            gkrecord_alt chnexport "record_alt", 1
-            gkreset_alt chnexport "reset_alt", 1
-            gksource_alt chnexport "source_alt", 1
-            ; data buffers -- 100 Files maximum
-            gilen[] init 100
-            gichn[] init 100
-            gSname[] init 100
-            gisr[] init 100
-            gipeak[] init 100
+; File-Looping Orc
+nchnls=2
+0dbfs=1
+; primary controls
+gkpitch chnexport "pitch", 1
+gkspeed chnexport "speed", 1
+gkloopstart chnexport "start", 1
+gkloopsize chnexport "size", 1
+gkdensity chnexport "density", 1
+gkoverlap chnexport "overlap", 1
+gkwindow chnexport "window", 1
+gkfilesel chnexport "file", 1
+gkfreeze chnexport "freeze", 1
+gkreset chnexport "reset", 1
+gkblend chnexport "blend", 1
+gkrecord chnexport "record", 1
+gkfilestate chnexport "filestate", 1
+gksource chnexport "source", 1
+gksourcegate chnexport "sourcegate", 1
+gksourcebuttonstate chnexport "source_state", 1
+gkeol chnexport "eol", 2
+gksizestatus chnexport "sizestatus", 2
+gkrecordstatus chnexport "recordstatus", 2
+gkbufferlength chnexport "bufferlength", 2
+; secondary controls
+gkloopstart_alt chnexport "start_alt", 1
+gkloopsize_alt chnexport "size_alt", 1
+gkdensity_alt chnexport "density_alt", 1
+gkoverlap_alt chnexport "overlap_alt", 1
+gkwindow_alt chnexport "window_alt", 1
+gkfreeze_alt chnexport "freeze_alt", 1
+gkrecord_alt chnexport "record_alt", 1
+gkfile_alt chnexport "file_alt", 1
+gkreset_alt chnexport "reset_alt", 1
+gksource_alt chnexport "source_alt", 1
+gkpitch_alt chnexport "pitch_alt", 1
+gkblend_alt chnexport "blend_alt", 1
+; data buffers -- 100 Files maximum
+gilen[] init 100
+gichn[] init 100
+gSname[] init 100
+gisr[] init 100
+gipeak[] init 100
             """
+
+
 
         self.instrparser.parse(self.instr, self.instr_dir)
         self.preamble = "ksmps = " + str(self.instrparser.configEntry("ksmps")[0]) + "\n"

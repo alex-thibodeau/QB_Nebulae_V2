@@ -32,6 +32,8 @@ if len(sys.argv) > 1:
         tempc = red
     elif arg == "calibration":
         tempc = yellow
+    elif arg == "wifi":
+        tempc = purple
     else:
         print "Unknown LED option"
         tempc = leddriver.Color(r=4095, g=0, b=1024)

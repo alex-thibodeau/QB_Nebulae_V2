@@ -1,3 +1,10 @@
+nebconfigbegin
+sr,48000
+ksmps,64
+-B,512
+-b,64
+nebconfigend
+
 ; Dripping Water
 ;
 ; Ported from Nebulae_V1 by:

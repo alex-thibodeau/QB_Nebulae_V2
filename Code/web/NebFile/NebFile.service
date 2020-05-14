@@ -1,0 +1,15 @@
+[Unit]
+Description=Nebulae Web File Server
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDir=/home/alarm/QB_Nebulae_V2/Code/web/NebFile
+ExecStart=/usr/bin/python2 /home/alarm/QB_Nebulae_V2/Code/web/NebFile/NebFile.py
+StandardInput=tty-force
+
+[Install]
+WantedBy=multi-user.target
