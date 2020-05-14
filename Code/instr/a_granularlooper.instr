@@ -241,8 +241,6 @@ arecL init 0
 arecR init 0
 amixl init 0
 amixr init 0
-aprevmixl init 0
-aprevmixr init 0
 arecordsync init 0
 kActiveBuffer init 0
 ; generates right channel ftables for stereo files
@@ -689,8 +687,6 @@ if krecstart > klen - 0.25  && krecordB == 1 then
     krecstart = kloopstart
     krecordA = 1
 endif
-;arecL = aprevmixl
-;arecR = aprevmixr
 arecL = amixl
 arecR = amixr
 ;arecL = aoutl
@@ -925,55 +921,33 @@ endif
 ablend interp kblend
 ablend_alt interp kblend_alt
 
-if gksource == 1 then
-	ablend *= 2.0
-	ablend -= 1.0
-	ablend_alt *= 2.0
-	ablend_alt -= 1.0
-	ablend max ablend, a(-1.0)
-	ablend min ablend, a(1.0)
-	ablend_alt max ablend_alt, a(-1.0)
-	ablend_alt min ablend_alt, a(1.0)
+ablend *= 2.0
+ablend -= 1.0
+ablend_alt *= 2.0
+ablend_alt -= 1.0
+ablend max ablend, a(-1.0)
+ablend min ablend, a(1.0)
+ablend_alt max ablend_alt, a(-1.0)
+ablend_alt min ablend_alt, a(1.0)
 
-    ablendvocoder = sqrt(0.5 * (1 - ablend))
-    ablendgranular = sqrt(0.5 * (1 + ablend))
-    ablenddry = sqrt(0.5 * (1 + ablend_alt))
-	ablendwet = sqrt(0.5 * (1 - ablend_alt))
+ablendvocoder = sqrt(0.5 * (1 - ablend))
+ablendgranular = sqrt(0.5 * (1 + ablend))
+ablenddry = sqrt(0.5 * (1 + ablend_alt))
+ablendwet = sqrt(0.5 * (1 - ablend_alt))
 
-    ablendvocoder min ablendvocoder, a(1.0)
-    ablendgranular min ablendgranular, a(1.0)
-    ablenddry min ablenddry, a(1.0)
-    ablendwet min ablendwet, a(1.0)
-    ablendvocoder max ablendvocoder, a(0.0)
-    ablendgranular max ablendgranular, a(0.0)
-    ablenddry max ablenddry, a(0.0)
-    ablendwet max ablendwet, a(0.0)
+ablendvocoder min ablendvocoder, a(1.0)
+ablendgranular min ablendgranular, a(1.0)
+ablenddry min ablenddry, a(1.0)
+ablendwet min ablendwet, a(1.0)
+ablendvocoder max ablendvocoder, a(0.0)
+ablendgranular max ablendgranular, a(0.0)
+ablenddry max ablenddry, a(0.0)
+ablendwet max ablendwet, a(0.0)
 
-    amixl = (asigL * ablendvocoder) + (agrainCompL * ablendgranular)
-    amixr = (asigR * ablendvocoder) + (agrainCompR * ablendgranular)
-	aoutl = (ablendwet * amixl) + (ablenddry * ainl)
-	aoutr = (ablendwet * amixr) + (ablenddry * ainr)
-
-else
-    kampscalar = 1.0 / kpeakamp
-    aprevmixl = amixl
-    aprevmixr = amixr
-    ;; Linear
-    ;amixl = ((agrainCompL * ablend) + ((asigL * (1.0 - ablend))) * kampscalar)
-    ;amixr = ((agrainCompR * ablend) + ((asigR * (1.0 - ablend))) * kampscalar)
-    ; Constant Power
-    ablend *= 2.0
-    ablend -= 1.0
-    ablend max ablend, a(-1.0)
-    ablend min ablend, a(1.0)
-    ablendgranular = sqrt(0.5 * (1 + ablend))
-    ablendvocoder = sqrt(0.5 * (1 - ablend))
-    amixl = (agrainCompL * ablendgranular) + (asigL * ablendvocoder)
-    amixr = (agrainCompR * ablendgranular) + (asigR * ablendvocoder)
-
-    aoutl = amixl
-    aoutr = amixr
-endif
+amixl = (asigL * ablendvocoder) + (agrainCompL * ablendgranular)
+amixr = (asigR * ablendvocoder) + (agrainCompR * ablendgranular)
+aoutl = (ablendwet * amixl) + (ablenddry * ainl)
+aoutr = (ablendwet * amixr) + (ablenddry * ainr)
 
 ;printks "dry: %f\tvocoder: %f\tgranular: %f\n", 0.25, k(ablenddry), k(ablendvocoder), k(ablendgranular)
 
