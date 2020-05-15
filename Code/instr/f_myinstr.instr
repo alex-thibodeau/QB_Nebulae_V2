@@ -1,0 +1,70 @@
+nebconfigbegin
+sr,48000
+ksmps,64
+-B,2048
+-b,512
+nebconfigend
+
+;giftl ftgen 0, 0, -(3 * sr), 2, 0
+;giftr ftgen 0, 0, -(3 * sr), 2, 0
+
+;opcode BufRec, 0, aik
+;	ain, ift, krec xin
+;	imaxndx = ftlen(ift)-1
+;	knew changed krec
+;	if krec == 1 then
+;		if knew == 1 then
+;			kndx = 0
+;		endif
+;		kndx = (kndx > imaxndx ? 0 : kndx)
+;		andx = kndx
+;		tabw ain, andx, ift
+;		kndx = kndx + 1
+;	endif
+;endop
+;
+;opcode BufPlay, a, ik
+;	ift, kplay xin
+;	setksmps 1 
+;	imaxndx = ftlen(ift)-1
+;	knew changed kplay
+;	if kplay == 1 then
+;		if knew == 1 then
+;			kndx = 0
+;		endif
+;		kndx = (kndx > imaxndx ? 0 : kndx)
+;		andx = kndx
+;		aout tab andx, ift
+;		kndx = kndx+1
+;	endif
+;	xout aout
+;endop
+
+
+instr 1
+
+ainl, ainr inch 1, 2
+
+;ilenl tableng giftl
+;ilenr tableng giftr
+;
+;apreindexl phasor 1/(ilenl/sr); 0-1, percentage of where we are in file?
+;apreindexr phasor 1/(ilenr/sr)
+;
+;andexl = apreindexl * ilenl; convert 0-1 val to length of table
+;andexr = apreindexr * ilenr
+;
+;tablew ainl, andexl, giftl, 0, 0, 1
+;tablew ainr, andexr, giftr, 0, 0, 1
+;
+;aoutl tab andexl, giftl
+;aoutr tab andexr, giftr
+
+;aoutl = (asigl * gkblend) + (ainl * (1 - gkblend))
+;aoutr = (asigr * gkblend) + (ainr * (1 - gkblend))
+
+;outs aoutl, aoutr
+
+outs ainl, ainr
+
+endin

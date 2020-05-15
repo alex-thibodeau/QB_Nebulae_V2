@@ -1,8 +1,8 @@
 nebconfigbegin
 sr,48000
 ksmps,64
--B,512
--b,64
+-B,2048
+-b,512
 nebconfigend
 
 instr 1

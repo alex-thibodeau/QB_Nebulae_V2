@@ -15,7 +15,7 @@ speed_alt,23
 pitch_alt,0
 start_alt,0
 size_alt,0
-blend_alt,0.5
+blend_alt,1
 density_alt,0
 overlap_alt,0
 window_alt,0.0

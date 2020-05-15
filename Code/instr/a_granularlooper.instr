@@ -687,6 +687,8 @@ if krecstart > klen - 0.25  && krecordB == 1 then
     krecstart = kloopstart
     krecordA = 1
 endif
+;arecL = ainl
+;arecR = ainr
 arecL = amixl
 arecR = amixr
 ;arecL = aoutl
@@ -839,8 +841,10 @@ else
         kwaveformR = kwaveformL
         asigR = asigL
     endif 
-		awavfml = 0
-		awavfmr = 0
+
+	awavfml = 0
+	awavfmr = 0
+
     agrainLL, agrainLR partikkel kgrainfreq, kdistribution, idisttab, async, kenv2amt, ienv2tab, \
             ienv_attack, ienv_decay, ksustain_amount, ka_d_ratio, kgrainsizel, iamp, igainmasks, \
             kwavfreq, ksweepshape, iwavfreqstarttab, iwavfreqendtab, awavfml, \
@@ -932,8 +936,8 @@ ablend_alt min ablend_alt, a(1.0)
 
 ablendvocoder = sqrt(0.5 * (1 - ablend))
 ablendgranular = sqrt(0.5 * (1 + ablend))
-ablenddry = sqrt(0.5 * (1 + ablend_alt))
-ablendwet = sqrt(0.5 * (1 - ablend_alt))
+ablenddry = sqrt(0.5 * (1 - ablend_alt))
+ablendwet = sqrt(0.5 * (1 + ablend_alt))
 
 ablendvocoder min ablendvocoder, a(1.0)
 ablendgranular min ablendgranular, a(1.0)

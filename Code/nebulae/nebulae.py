@@ -83,8 +83,8 @@ class Nebulae(object):
         if self.c is None:
             self.c = ctcsound.Csound()
         self.log.spill_basic_info()
-        floader = fileloader.FileLoader()
-        floader.reload()
+        #floader = fileloader.FileLoader()
+        #floader.reload()
         self.orc_handle.generate_orc(instr, instr_bank)
         configData = self.orc_handle.getConfigDict()
         self.c.setOption("-iadc:hw:0,0")
@@ -196,8 +196,8 @@ class Nebulae(object):
         self.c_handle = None
         self.currentIntr = patch
         self.newInstr = patch
-        floader = fileloader.FileLoader() 
-        floader.reload() #reloads all the files to be sure
+        #floader = fileloader.FileLoader() 
+        #floader.reload() #reloads all the files to be sure
         self.orc_handle.refreshFileHandler() #also the audio files
 
         fullPath = "/home/alarm/sc/" + patch + ".scd"
@@ -224,8 +224,8 @@ class Nebulae(object):
         self.c_handle = None
         self.currentInstr = patch
         self.newInstr = patch
-        floader = fileloader.FileLoader()
-        floader.reload()
+        #floader = fileloader.FileLoader()
+        #floader.reload()
         self.orc_handle.refreshFileHandler()
         fullPath = "/home/alarm/pd/" + patch + ".pd"
         #cmd = "pd -rt -nogui -verbose -audiobuf 5".split()
