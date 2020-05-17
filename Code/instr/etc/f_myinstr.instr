@@ -1,0 +1,263 @@
+nebconfigbegin
+sr,48000
+ksmps,64
+-B,2048
+-b,512
+nebconfigend
+
+; set the buffer a little over what we need.
+giBufSize = 3
+giftl ftgen 0, 0, -(giBufSize * sr), 7, 0
+giftr ftgen 0, 0, -(giBufSize * sr), 7, 0
+giCosine ftgen 0, 0, 8193, 9, 1, 1, 90
+
+; windows, tables, and other misc globals
+giwindowtablesize = 512
+giHamming   ftgen   0, 0, giwindowtablesize, 20, 9, 1  
+giBartlett  ftgen   0, 0, giwindowtablesize, 20, 3 
+giBlkHarris ftgen   0, 0, giwindowtablesize, 20, 5
+giGaussian  ftgen   0, 0, giwindowtablesize, 20, 6
+giRectangle ftgen   0, 0, giwindowtablesize, 20, 8, 1
+giRampUp    ftgen   0, 0, giwindowtablesize, 7, 0, 15.0 * (giwindowtablesize / 16.0), 1, (giwindowtablesize / 16.0), 0
+giRampDown  ftgen   0, 0, giwindowtablesize, 7, 0,(giwindowtablesize / 16.0),1 ,  15.0 * (giwindowtablesize / 16.0), 0
+giWinMix	ftgen	0, 0, giwindowtablesize, 20, 9, 1
+giWin		ftgen	0, 0, giwindowtablesize, 20, 9, 1
+giWinB		ftgen	0, 0, giwindowtablesize, 20, 9, 1
+
+instr 1
+
+ainl, ainr inch 1, 2
+
+; inits
+ilen tableng giftl ; tables BETTER be the same size
+aphasor init 0
+awriteindex init 0
+areadphasor init 0
+areadtime init 0
+asyncin init 0
+kloopstart init 0
+kdensity init 0
+kpitch init 0
+asigl init 0
+asigr init 0
+seed 0
+kfirsttime init 1
+
+; cleanup inputs/setup parameters ==============================================================
+if gkloopstart < 0.0015 then
+	gkloopstart = 0; we can't do any processing in zero time, we will skip later
+endif
+if gkloopstart > 0.995 then
+	gkloopstart =  0.999; if we set 1, it's the same as 0
+endif
+; there are issues when the read and write heads are too close, adding a fraction of a second
+; and scaling things is helpful.
+kloopstart = 0.97 * gkloopstart + 0.03
+;
+kpitch = 0.125 * exp(gkpitch * log(32))
+kpitch = (kpitch <= 1.005 && kpitch >= 0.995 ? 1.0 : kpitch)
+;
+kdensity = abs(1.25 - 2.5*gkdensity) - 0.25
+kdensity = (kdensity < 0 ? 0 : kdensity)
+
+;===============================================================================================
+
+; general phasor and also write head.
+; don't advance it when we are frozen: both heads do not move.
+if gkfreeze == 0 then
+	aphasor, asyncphasor syncphasor 1/(ilen/sr), asyncin
+endif
+
+
+; it seems counter-intuitive that increasing the value of 
+; start should decrease where the play head is, but intuitively 
+; we are increasing the amount of time between recording and 
+; playing. at start=0, playing occurs zero time after recording. 
+; perhaps visualize a stationary circular tape with moving heads.
+; start=0    start small    start large
+;   r      |    r         |   r                  | >>>>heads move this way >>>>
+;   w      |       w      |                w     | >>>>heads move this way >>>>
+; ================================================ = = tape is circular = = = =
+
+awriteindex = aphasor * ilen
+areadphasor = ((aphasor - kloopstart) - floor(aphasor - kloopstart))
+areadindex = areadphasor * ilen
+areadtime = areadphasor * giBufSize
+
+if gkrecord == 1 && gkfreeze == 0 then
+	tablew ainl, awriteindex, giftl, 0, 0, 1
+	tablew ainr, awriteindex, giftr, 0, 0, 1
+endif
+
+; this bit on density and size taken from original nebulae code
+ilogmaxgfreq = log(2500.0)
+ilogmingfreq = log(0.12)
+kdensityscalartan = ((tanh((kdensity * 2.0) - 1.0)) + 0.8) * 0.4
+kdensityscalarcube = ((((kdensity * 2.0) - 1.0) ^ 3) + 1.0) * 0.5
+kdensityscalar = (kdensityscalartan * 0.25) + (kdensityscalarcube * 0.75)
+kgrainfreq = exp((kdensityscalar) * (ilogmaxgfreq - ilogmingfreq) + ilogmingfreq)
+kmaxgrainpw = (kgrainfreq < 4 ? 4 : 6)
+
+kgsizescalar = gkloopsize * gkloopsize
+if kgrainfreq > 0 then
+    kgrainsize = (kgsizescalar) * (((1 / kgrainfreq) * kmaxgrainpw) * 1000) + 1
+else
+    kgrainsize = (kgsizescalar * kgsizescalar * 1000) + 0.5
+	kgrainsize = (kgrainsize == 0 ? 0.5 : kgrainsize)
+endif
+
+kgrainsize min 8000, kgrainsize
+
+; this bit on windows taken from nebulae code as well
+kwindow portk gkwindow, 0.1
+kwindowsel = int(kwindow * 6)
+kwindowblend = kwindow * 6
+kwindowchanged changed kwindowsel
+if kwindowchanged == 1 || kfirsttime == 1 then
+    if kwindowsel < 1  then
+        tablecopy giWin, giGaussian
+        tablecopy giWinB, giBlkHarris
+    elseif kwindowsel < 2 then
+        tablecopy giWin, giBlkHarris
+        tablecopy giWinB, giRampDown
+    elseif kwindowsel < 3 then
+        tablecopy giWin, giRampDown
+        tablecopy giWinB, giBartlett
+    elseif kwindowsel < 4 then
+        tablecopy giWin, giBartlett
+        tablecopy giWinB, giRampUp
+    elseif kwindowsel < 5 then
+        tablecopy giWin, giRampUp
+        tablecopy giWinB, giHamming
+    elseif kwindowsel < 6 then
+        tablecopy giWin, giHamming
+        tablecopy giWinB, giRectangle
+    elseif kwindowsel < 7 then
+        tablecopy giWin, giRectangle
+    endif
+    kfirsttime = 0
+endif
+; Window Blend
+kwblend = kwindowblend - kwindowsel
+tablemix giWinMix, 0, giwindowtablesize, giWin, 0, 1.0-kwblend, giWinB, 0, kwblend
+
+
+; more params
+kdistribution = 0
+idisttab = -1
+async = 0
+kenv2amt = 1
+ienv2tab = giWinMix
+ienv_attack = -1
+ienv_decay = -1
+ksustain_amount = 0
+ka_d_ratio = 0.5
+kduration = kgrainsize
+kamp = 0.5
+igainmasks = -1
+kwavfreq = (1/giBufSize) * kpitch
+ksweepshape = 0
+iwavfreqstarttab = -1
+iwavfreqendtab = -1
+awavfm = 0
+ifmamptab = -1
+ifmenv = -1
+icosine = giCosine
+ktraincps = 1
+knumpartials = 1
+kchroma = 1
+ichannelmasks = -1
+if gkdensity > 0.5 then
+	krandommask = 1 - kdensity
+else
+	krandommask = 0
+endif
+kwaveform1l = giftl
+kwaveform2l = giftl
+kwaveform3l = giftl
+kwaveform4l = giftl
+kwaveform1r = giftr
+kwaveform2r = giftr
+kwaveform3r = giftr
+kwaveform4r = giftr
+iwaveamptab = -1
+asamplepos1 = areadphasor
+asamplepos2 = areadphasor
+asamplepos3 = areadphasor
+asamplepos4 = areadphasor
+kwavekey1 = 1
+kwavekey2 = 1
+kwavekey3 = 1
+kwavekey4 = 1
+imax_grains = 10
+
+asigl mincer areadtime, 1, kpitch, giftl, 1, 2048, 4
+asigr mincer areadtime, 1, kpitch, giftr, 1, 2048, 4
+
+agrainl partikkel kgrainfreq, kdistribution, idisttab, async, \
+	kenv2amt, ienv2tab, ienv_attack, ienv_decay, ksustain_amount, \
+	ka_d_ratio, kduration, kamp, igainmasks, kwavfreq, ksweepshape, \
+	iwavfreqstarttab, iwavfreqendtab, awavfm, ifmamptab, ifmenv, icosine, \
+	ktraincps, knumpartials, kchroma, ichannelmasks, krandommask, \
+	kwaveform1l, kwaveform2l, kwaveform3l, kwaveform4l, iwaveamptab, \
+	asamplepos1, asamplepos2, asamplepos3, asamplepos4, \
+	kwavekey1, kwavekey2, kwavekey3, kwavekey4, imax_grains
+
+agrainr partikkel kgrainfreq, kdistribution, idisttab, async, \
+	kenv2amt, ienv2tab, ienv_attack, ienv_decay, ksustain_amount, \
+	ka_d_ratio, kduration, kamp, igainmasks, kwavfreq, ksweepshape, \
+	iwavfreqstarttab, iwavfreqendtab, awavfm, ifmamptab, ifmenv, icosine, \
+	ktraincps, knumpartials, kchroma, ichannelmasks, krandommask, \
+	kwaveform1r, kwaveform2r, kwaveform3r, kwaveform4r, iwaveamptab, \
+	asamplepos1, asamplepos2, asamplepos3, asamplepos4, \
+	kwavekey1, kwavekey2, kwavekey3, kwavekey4, imax_grains
+
+; mixer, constant power functions
+kblend = gkblend
+kblend_alt = gkblend_alt
+if kblend > 1.0 then
+    kblend = 1.0
+endif
+if kblend < 0.0 then 
+    kblend = 0.0
+endif
+if kblend_alt > 1.0 then
+    kblend_alt = 1.0
+endif
+if kblend_alt < 0.0 then 
+    kblend_alt = 0.0
+endif
+ablend interp kblend
+ablend_alt interp kblend_alt
+
+ablend *= 2.0
+ablend -= 1.0
+ablend_alt *= 2.0
+ablend_alt -= 1.0
+ablend max ablend, a(-1.0)
+ablend min ablend, a(1.0)
+ablend_alt max ablend_alt, a(-1.0)
+ablend_alt min ablend_alt, a(1.0)
+
+ablendvocoder = sqrt(0.5 * (1 - ablend_alt))
+ablendgranular = sqrt(0.5 * (1 + ablend_alt))
+ablenddry = sqrt(0.5 * (1 - ablend))
+ablendwet = sqrt(0.5 * (1 + ablend))
+
+ablendvocoder min ablendvocoder, a(1.0)
+ablendgranular min ablendgranular, a(1.0)
+ablenddry min ablenddry, a(1.0)
+ablendwet min ablendwet, a(1.0)
+ablendvocoder max ablendvocoder, a(0.0)
+ablendgranular max ablendgranular, a(0.0)
+ablenddry max ablenddry, a(0.0)
+ablendwet max ablendwet, a(0.0)
+
+amixl = (asigl * ablendvocoder) + (agrainl * ablendgranular)
+amixr = (asigr * ablendvocoder) + (agrainr * ablendgranular)
+aoutl = (ablendwet * amixl) + (ablenddry * ainl)
+aoutr = (ablendwet * amixr) + (ablenddry * ainr)
+
+outs aoutl, aoutr
+
+endin
