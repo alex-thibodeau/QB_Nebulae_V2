@@ -136,10 +136,10 @@ endif
 
 ; size and density, clouds style, adapted from clouds code
 if gkdensity <= 0.5 then
-	ktargetgrains = kdensity * kdensity * kdensity * 40
+	ktargetgrains = kdensity * kdensity * kdensity * 80
 	kgrainfreq = ktargetgrains / giBufSize
 else
-	kgrainfreq = 40 / giBufSize
+	kgrainfreq = 80 / giBufSize
 endif
 kgrainsize table (256 * gkloopsize), gigrainsizes; in seconds
 kgrainsize = kgrainsize * 1000; in ms
